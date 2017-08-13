@@ -35,8 +35,9 @@
 ;; which should return (<your-real-uid> 0).
 
 (defpackage :root
-  (:use :common-lisp :unix :alien :c-call)
-  (:export :condescend :as-superuser))
+  (:use :common-lisp)
+  (:export :condescend :as-superuser)
+  )
 
 (in-package :root)
 
@@ -44,20 +45,17 @@
   "Switch down from the superuser, with the option to switch back.
 \(Sets the effective user to the real user, and the real user to root.)
 Returns T on success, or NIL if we weren't the superuser."
-  (values (unix-setreuid 0 (unix-getuid))))
+  (values (osicat-posix:setreuid 0 (osicat-posix:getuid))))
 
 (defmacro as-superuser (&body forms)
   "Execute FORMS as the superuser."
-  `(let ((old-euid (geteuid)))
+  `(let ((old-euid (osicat-posix:geteuid)))
     (unwind-protect
-         (if (unix-setreuid 0 0)
+         (if (osicat-posix:setreuid 0 0)
              (progn ,@forms)
              (error "Failed to become superuser"))
-      (unix-setreuid 0 old-euid))))
+      (osicat-posix:setreuid 0 old-euid))))
 
-;; CMUCL 18e's unix-glibc2.lisp has this #+NIL'd out, so here it is.
-(def-alien-routine ("geteuid" geteuid) int
-  "Get the effective user ID of the calling process.")
 
 (pushnew :root *features*)
 
